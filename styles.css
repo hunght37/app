@@ -1,10 +1,13 @@
 /* Custom styles for the Todo App */
 .task-card {
     background-color: white;
-    padding: 1rem;
     border-radius: 0.5rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-bottom: 1rem;
+    overflow: hidden;
+    transform: translateZ(0); /* Force GPU acceleration */
+    will-change: transform, box-shadow; /* Optimize animations */
 }
 
 .dark .task-card {
@@ -13,7 +16,7 @@
 
 .task-card:hover {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transform: translateY(-2px);
+    transform: translateY(-2px) translateZ(0);
 }
 
 .priority-high {
@@ -30,21 +33,116 @@
 
 .task-completed {
     opacity: 0.75;
+    transition: opacity 0.3s ease;
 }
 
 .task-completed .task-title {
     text-decoration: line-through;
+    transition: text-decoration 0.3s ease;
+}
+
+/* Form styles */
+input, select {
+    transition: all 0.2s ease;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.dark input:focus, .dark select:focus {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
 }
 
 /* Animation for modals */
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from { 
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+    to { 
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(100%) scale(0.95);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
 }
 
 .modal-open {
-    animation: fadeIn 0.3s ease-out;
+    animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex !important;
+    opacity: 0;
+    animation-fill-mode: forwards;
+}
+
+.modal-open > div {
+    animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0;
+    animation-fill-mode: forwards;
+    animation-delay: 0.1s;
+}
+
+/* Toast animation */
+@keyframes toastIn {
+    from {
+        transform: translateY(100%) scale(0.95);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes toastOut {
+    from {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+    to {
+        transform: translateY(100%) scale(0.95);
+        opacity: 0;
+    }
+}
+
+.toast-enter {
+    animation: toastIn 0.3s ease-out;
+}
+
+.toast-exit {
+    animation: toastOut 0.3s ease-out;
+}
+
+/* Theme transition */
+.theme-transition {
+    transition: background-color 0.3s ease,
+                color 0.3s ease,
+                border-color 0.3s ease,
+                box-shadow 0.3s ease;
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }
 
 /* Custom scrollbar */
@@ -53,25 +151,52 @@
 }
 
 ::-webkit-scrollbar-track {
-    background-color: #f3f4f6;
-}
-
-.dark ::-webkit-scrollbar-track {
-    background-color: #1f2937;
+    background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-    background-color: #9ca3af;
-    border-radius: 9999px;
+    background-color: rgba(156, 163, 175, 0.5);
+    border-radius: 4px;
 }
 
 .dark ::-webkit-scrollbar-thumb {
-    background-color: #4b5563;
+    background-color: rgba(75, 85, 99, 0.5);
 }
 
-/* Transition effects */
-.transition-all {
-    transition-property: all;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    transition-duration: 150ms;
+::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(107, 114, 128, 0.7);
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(55, 65, 81, 0.7);
+}
+
+/* Checkbox styles */
+input[type="checkbox"] {
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+input[type="checkbox"]:checked {
+    background-color: #3b82f6;
+    border-color: #3b82f6;
+}
+
+.dark input[type="checkbox"]:checked {
+    background-color: #60a5fa;
+    border-color: #60a5fa;
+}
+
+/* Button hover effects */
+button {
+    transition: all 0.2s ease;
+}
+
+button:hover {
+    transform: translateY(-1px);
+}
+
+button:active {
+    transform: translateY(0);
 }
