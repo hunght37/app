@@ -31,14 +31,12 @@
     border-left: 4px solid #10b981;
 }
 
-.task-completed {
+.task-card.completed {
     opacity: 0.75;
-    transition: opacity 0.3s ease;
 }
 
-.task-completed .task-title {
+.task-card.completed .task-title {
     text-decoration: line-through;
-    transition: text-decoration 0.3s ease;
 }
 
 /* Form styles */
@@ -57,72 +55,56 @@ input:focus, select:focus {
     box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.2);
 }
 
-/* Animation for modals */
+/* Modal animations */
 @keyframes fadeIn {
     from { 
         opacity: 0;
-        transform: translateY(-20px) scale(0.95);
+        transform: translateY(-20px);
     }
     to { 
         opacity: 1;
-        transform: translateY(0) scale(1);
+        transform: translateY(0);
     }
 }
 
 @keyframes slideIn {
     from {
-        transform: translateY(100%) scale(0.95);
+        transform: translateY(100%);
         opacity: 0;
     }
     to {
-        transform: translateY(0) scale(1);
+        transform: translateY(0);
         opacity: 1;
     }
 }
 
 .modal-open {
-    animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex !important;
-    opacity: 0;
-    animation-fill-mode: forwards;
+}
+
+.modal-open::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    animation: fadeIn 0.3s ease forwards;
 }
 
 .modal-open > div {
-    animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    opacity: 0;
-    animation-fill-mode: forwards;
-    animation-delay: 0.1s;
+    position: relative;
+    animation: slideIn 0.3s ease forwards;
 }
 
-/* Toast animation */
+/* Toast notifications */
 @keyframes toastIn {
     from {
-        transform: translateY(100%) scale(0.95);
+        transform: translateY(100%);
         opacity: 0;
     }
     to {
-        transform: translateY(0) scale(1);
+        transform: translateY(0);
         opacity: 1;
     }
-}
-
-@keyframes toastOut {
-    from {
-        transform: translateY(0) scale(1);
-        opacity: 1;
-    }
-    to {
-        transform: translateY(100%) scale(0.95);
-        opacity: 0;
-    }
-}
-
-.toast-enter {
-    animation: toastIn 0.3s ease-out;
-}
-
-.toast-exit {
-    animation: toastOut 0.3s ease-out;
 }
 
 /* Theme transition */
@@ -133,7 +115,7 @@ input:focus, select:focus {
                 box-shadow 0.3s ease;
 }
 
-/* Accessibility improvements */
+/* Accessibility */
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -171,7 +153,7 @@ input:focus, select:focus {
     background-color: rgba(55, 65, 81, 0.7);
 }
 
-/* Checkbox styles */
+/* Form elements */
 input[type="checkbox"] {
     cursor: pointer;
     border-radius: 4px;
@@ -188,8 +170,8 @@ input[type="checkbox"]:checked {
     border-color: #60a5fa;
 }
 
-/* Button hover effects */
-button {
+/* Interactive elements */
+button, select {
     transition: all 0.2s ease;
 }
 
@@ -199,4 +181,19 @@ button:hover {
 
 button:active {
     transform: translateY(0);
+}
+
+/* Statistics cards */
+#statsTotal,
+#statsActive,
+#statsCompleted,
+#statsHighPriority,
+#statsDueSoon,
+#statsCompletionRate {
+    transition: all 0.3s ease;
+}
+
+/* Error states */
+.border-red-500 {
+    border-color: #ef4444 !important;
 }
