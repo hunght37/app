@@ -1,12 +1,22 @@
 // UI Manager Module
 export class UIManager {
-    constructor() {
+    constructor(taskManager, themeManager) {
+        this.taskManager = taskManager;
+        this.themeManager = themeManager;
         this.editingTaskId = null;
-        this.setupDomElements();
+        this.currentPage = 'tasks';
+        this.initializeUI();
+        this.updateStatistics();
     }
 
-    // Setup DOM element references
-    setupDomElements() {
+    initializeUI() {
+        // Navigation
+        this.navTasks = document.getElementById('navTasks');
+        this.navStats = document.getElementById('navStats');
+        this.tasksPage = document.getElementById('tasksPage');
+        this.statsPage = document.getElementById('statsPage');
+
+        // Task Controls
         this.domElements = {
             taskForm: document.getElementById('taskForm'),
             taskList: document.getElementById('taskList'),
@@ -25,6 +35,43 @@ export class UIManager {
             statsDueSoon: document.getElementById('statsDueSoon'),
             statsCompletionRate: document.getElementById('statsCompletionRate')
         };
+
+        this.setupEventListeners();
+    }
+
+    setupEventListeners() {
+        // Navigation Event Listeners
+        this.navTasks.addEventListener('click', () => this.showPage('tasks'));
+        this.navStats.addEventListener('click', () => this.showPage('stats'));
+
+        // Task Form Event Listeners
+        this.domElements.taskForm.addEventListener('submit', (e) => this.handleSubmitTaskForm(e));
+        this.domElements.taskModal.addEventListener('click', (e) => this.handleTaskModalClick(e));
+        this.domElements.templatesModal.addEventListener('click', (e) => this.handleTemplatesModalClick(e));
+
+        // Task List Event Listeners
+        this.domElements.taskList.addEventListener('click', (e) => this.handleTaskListClick(e));
+
+        // Status Filter Event Listeners
+        this.domElements.statusFilter.addEventListener('change', () => this.updateTaskList(this.getFilteredTasks()));
+    }
+
+    showPage(pageName) {
+        // Update navigation links
+        this.navTasks.classList.toggle('active', pageName === 'tasks');
+        this.navStats.classList.toggle('active', pageName === 'stats');
+
+        // Update page visibility
+        this.tasksPage.classList.toggle('hidden', pageName !== 'tasks');
+        this.statsPage.classList.toggle('hidden', pageName !== 'stats');
+
+        // Update current page
+        this.currentPage = pageName;
+
+        // Trigger chart update if showing stats page
+        if (pageName === 'stats') {
+            this.taskManager.statsManager.updateCharts();
+        }
     }
 
     // Show task modal
@@ -161,8 +208,78 @@ export class UIManager {
         });
     }
 
-    // Update statistics
-    updateStatistics(stats) {
+    // Handle task list click events
+    handleTaskListClick(e) {
+        const taskCard = e.target.closest('.task-card');
+        if (!taskCard) return;
+
+        if (e.target.matches('input[type="checkbox"]')) {
+            this.taskManager.toggleTaskCompletion(taskCard.dataset.taskId);
+            this.updateTaskList(this.getFilteredTasks());
+            this.updateStatistics();
+        } else if (e.target.closest('.edit-btn')) {
+            this.editingTaskId = taskCard.dataset.taskId;
+            this.showTaskModal();
+        } else if (e.target.closest('.delete-btn')) {
+            if (confirm('Are you sure you want to delete this task?')) {
+                this.taskManager.deleteTask(taskCard.dataset.taskId);
+                this.updateTaskList(this.getFilteredTasks());
+                this.updateStatistics();
+            }
+        }
+    }
+
+    // Handle task form submission
+    handleSubmitTaskForm(e) {
+        e.preventDefault();
+        const formData = {
+            title: this.domElements.taskTitle.value,
+            priority: this.domElements.taskPriority.value,
+            deadline: this.domElements.taskDeadline.value
+        };
+
+        const errors = this.validateTaskForm(formData);
+        if (errors.length > 0) {
+            errors.forEach(error => this.showFieldError(error.field, error.message));
+            return;
+        }
+
+        if (this.editingTaskId) {
+            formData.id = this.editingTaskId;
+        }
+
+        this.taskManager.createOrUpdateTask(formData);
+        this.hideTaskModal();
+        this.updateTaskList(this.getFilteredTasks());
+        this.updateStatistics();
+    }
+
+    // Get filtered tasks
+    getFilteredTasks() {
+        const filter = this.domElements.statusFilter.value;
+        const tasks = this.taskManager.getTasks();
+        
+        switch (filter) {
+            case 'active':
+                return tasks.filter(task => !task.completed);
+            case 'completed':
+                return tasks.filter(task => task.completed);
+            case 'high':
+                return tasks.filter(task => task.priority === 'high');
+            case 'medium':
+                return tasks.filter(task => task.priority === 'medium');
+            case 'low':
+                return tasks.filter(task => task.priority === 'low');
+            case 'deadline':
+                return [...tasks].sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+            default:
+                return tasks;
+        }
+    }
+
+    // Update statistics display
+    updateStatistics() {
+        const stats = this.taskManager.getStatistics();
         this.domElements.statsTotal.textContent = stats.total;
         this.domElements.statsActive.textContent = stats.active;
         this.domElements.statsCompleted.textContent = stats.completed;

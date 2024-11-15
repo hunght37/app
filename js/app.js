@@ -2,12 +2,24 @@
 import { TaskManager } from './taskManager.js';
 import { UIManager } from './uiManager.js';
 import { ThemeManager } from './themeManager.js';
+import { StatsManager } from './statsManager.js';
 
 class TodoApp {
     constructor() {
         this.taskManager = new TaskManager();
-        this.uiManager = new UIManager();
         this.themeManager = new ThemeManager();
+        this.statsManager = new StatsManager(this.taskManager);
+        this.taskManager.statsManager = this.statsManager;
+        this.uiManager = new UIManager(this.taskManager, this.themeManager);
+
+        // Initialize theme
+        this.themeManager.initialize();
+
+        // Update stats when theme changes
+        this.themeManager.onThemeChange = (isDark) => {
+            this.statsManager.updateTheme(isDark);
+        };
+
         this.setupEventListeners();
     }
 
@@ -46,6 +58,44 @@ class TodoApp {
             console.error('Error setting up event listeners:', error);
             this.uiManager.showToast('Failed to initialize some features. Please refresh the page.', 'error');
         }
+    }
+
+    // Show templates modal
+    showTemplatesModal() {
+        const templatesModal = document.getElementById('templatesModal');
+        const templateList = document.getElementById('templateList');
+        
+        // Clear existing templates
+        templateList.innerHTML = '';
+
+        // Add template options
+        const templates = [
+            { title: 'Important Meeting', priority: 'high', deadline: new Date().toISOString().split('T')[0] },
+            { title: 'Weekly Review', priority: 'medium', deadline: new Date().toISOString().split('T')[0] },
+            { title: 'Quick Task', priority: 'low', deadline: new Date().toISOString().split('T')[0] }
+        ];
+
+        templates.forEach(template => {
+            const templateItem = document.createElement('div');
+            templateItem.className = 'template-item p-4 bg-gray-50 dark:bg-gray-700 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors';
+            templateItem.innerHTML = `
+                <h3 class="font-medium text-gray-900 dark:text-white">${template.title}</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-300">Priority: ${template.priority}</p>
+            `;
+            templateItem.addEventListener('click', () => {
+                this.uiManager.showTaskModal(template);
+                this.hideTemplatesModal();
+            });
+            templateList.appendChild(templateItem);
+        });
+
+        templatesModal.classList.add('modal-open');
+    }
+
+    // Hide templates modal
+    hideTemplatesModal() {
+        const templatesModal = document.getElementById('templatesModal');
+        templatesModal.classList.remove('modal-open');
     }
 
     // Handle form submission
@@ -107,58 +157,6 @@ class TodoApp {
             console.error('Error handling task action:', error);
             this.uiManager.showToast('Failed to perform action. Please try again.', 'error');
         }
-    }
-
-    // Templates modal
-    showTemplatesModal() {
-        this.uiManager.domElements.templateList.innerHTML = '';
-        
-        const templates = [
-            {
-                title: "Daily Stand-up Meeting",
-                priority: "medium",
-                deadline: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-            },
-            {
-                title: "Weekly Report",
-                priority: "high",
-                deadline: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-            },
-            {
-                title: "Read Documentation",
-                priority: "low",
-                deadline: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
-            }
-        ];
-
-        templates.forEach(template => {
-            const templateElement = document.createElement('div');
-            templateElement.className = 'task-card priority-' + template.priority;
-            templateElement.innerHTML = `
-                <div class="flex justify-between items-center p-4">
-                    <div>
-                        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">${template.title}</h3>
-                        <p class="text-sm text-gray-600 dark:text-gray-400">Priority: ${template.priority}</p>
-                    </div>
-                    <button class="use-template px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                        Use Template
-                    </button>
-                </div>
-            `;
-
-            templateElement.querySelector('.use-template').addEventListener('click', () => {
-                this.hideTemplatesModal();
-                this.uiManager.showTaskModal(template);
-            });
-
-            this.uiManager.domElements.templateList.appendChild(templateElement);
-        });
-
-        this.uiManager.domElements.templatesModal.classList.add('modal-open');
-    }
-
-    hideTemplatesModal() {
-        this.uiManager.domElements.templatesModal.classList.remove('modal-open');
     }
 
     // Delete confirmation

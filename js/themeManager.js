@@ -2,7 +2,21 @@
 export class ThemeManager {
     constructor() {
         this.currentTheme = 'light';
+        this.onThemeChange = null;
+    }
+
+    // Initialize theme
+    initialize() {
         this.loadTheme();
+        this.applyTheme();
+        
+        // Listen for system theme changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            if (!localStorage.getItem('theme')) {
+                this.currentTheme = e.matches ? 'dark' : 'light';
+                this.applyTheme();
+            }
+        });
     }
 
     // Load saved theme
@@ -42,19 +56,20 @@ export class ThemeManager {
 
     // Apply current theme
     applyTheme() {
-        if (this.currentTheme === 'dark') {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
+        const isDark = this.currentTheme === 'dark';
+        document.documentElement.classList.toggle('dark', isDark);
         this.updateThemeIcons();
+
+        // Call theme change callback if exists
+        if (typeof this.onThemeChange === 'function') {
+            this.onThemeChange(isDark);
+        }
     }
 
     // Update theme icons
     updateThemeIcons() {
         const moonIcon = document.getElementById('moonIcon');
         const sunIcon = document.getElementById('sunIcon');
-        
         if (this.currentTheme === 'dark') {
             moonIcon.classList.add('hidden');
             sunIcon.classList.remove('hidden');
@@ -62,15 +77,5 @@ export class ThemeManager {
             moonIcon.classList.remove('hidden');
             sunIcon.classList.add('hidden');
         }
-    }
-
-    // Listen for system theme changes
-    setupSystemThemeListener() {
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-            if (!localStorage.getItem('theme')) {
-                this.currentTheme = e.matches ? 'dark' : 'light';
-                this.applyTheme();
-            }
-        });
     }
 }

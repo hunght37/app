@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Modern Todo App</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -20,69 +21,120 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body class="bg-gray-50 dark:bg-gray-900 min-h-screen transition-colors duration-200">
-    <div class="container mx-auto px-4 py-8 max-w-4xl">
-        <!-- Header with Theme Toggle -->
-        <header class="flex justify-between items-center mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 dark:text-white">Todo App</h1>
-            <button id="themeToggle" class="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
-                <svg class="w-6 h-6 text-gray-800 dark:text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" id="moonIcon">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
-                </svg>
-                <svg class="w-6 h-6 text-gray-800 dark:text-gray-200 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" id="sunIcon">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"/>
-                </svg>
-            </button>
-        </header>
-
-        <!-- Statistics Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-                <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200">Total Tasks</h3>
-                <p id="statsTotal" class="text-2xl font-bold text-blue-600 dark:text-blue-400">0</p>
-            </div>
-            <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-                <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200">Active Tasks</h3>
-                <p id="statsActive" class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">0</p>
-            </div>
-            <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-                <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200">Completed Tasks</h3>
-                <p id="statsCompleted" class="text-2xl font-bold text-green-600 dark:text-green-400">0</p>
+    <!-- Navigation Bar -->
+    <nav class="bg-white dark:bg-gray-800 shadow-md">
+        <div class="container mx-auto px-4">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-8">
+                    <h1 class="text-xl font-bold text-gray-900 dark:text-white">Todo App</h1>
+                    <div class="hidden md:flex space-x-4">
+                        <button id="navTasks" class="nav-link active px-3 py-2 rounded-md text-sm font-medium">
+                            Tasks
+                        </button>
+                        <button id="navStats" class="nav-link px-3 py-2 rounded-md text-sm font-medium">
+                            Statistics
+                        </button>
+                    </div>
+                </div>
+                <button id="themeToggle" class="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                    <svg class="w-6 h-6 text-gray-800 dark:text-gray-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" id="moonIcon">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                    </svg>
+                    <svg class="w-6 h-6 text-gray-800 dark:text-gray-200 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24" id="sunIcon">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"/>
+                    </svg>
+                </button>
             </div>
         </div>
+    </nav>
 
-        <!-- Additional Statistics -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-                <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200">High Priority</h3>
-                <p id="statsHighPriority" class="text-2xl font-bold text-red-600 dark:text-red-400">0</p>
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8 max-w-4xl">
+        <!-- Tasks Page -->
+        <div id="tasksPage" class="page active">
+            <!-- Statistics Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200">Total Tasks</h3>
+                    <p id="statsTotal" class="text-2xl font-bold text-blue-600 dark:text-blue-400">0</p>
+                </div>
+                <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200">Active Tasks</h3>
+                    <p id="statsActive" class="text-2xl font-bold text-yellow-600 dark:text-yellow-400">0</p>
+                </div>
+                <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200">Completed Tasks</h3>
+                    <p id="statsCompleted" class="text-2xl font-bold text-green-600 dark:text-green-400">0</p>
+                </div>
             </div>
-            <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-                <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200">Due Soon</h3>
-                <p id="statsDueSoon" class="text-2xl font-bold text-orange-600 dark:text-orange-400">0</p>
+
+            <!-- Additional Statistics -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200">High Priority</h3>
+                    <p id="statsHighPriority" class="text-2xl font-bold text-red-600 dark:text-red-400">0</p>
+                </div>
+                <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200">Due Soon</h3>
+                    <p id="statsDueSoon" class="text-2xl font-bold text-orange-600 dark:text-orange-400">0</p>
+                </div>
+                <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200">Completion Rate</h3>
+                    <p id="statsCompletionRate" class="text-2xl font-bold text-indigo-600 dark:text-indigo-400">0%</p>
+                </div>
             </div>
-            <div class="p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-                <h3 class="text-lg font-semibold text-gray-700 dark:text-gray-200">Completion Rate</h3>
-                <p id="statsCompletionRate" class="text-2xl font-bold text-indigo-600 dark:text-indigo-400">0%</p>
+
+            <!-- Task Controls -->
+            <div class="flex flex-col md:flex-row gap-4 mb-8">
+                <button id="newTaskBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    New Task
+                </button>
+                <select id="statusFilter" class="px-4 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 rounded-lg">
+                    <option value="all">All Tasks</option>
+                    <option value="active">Active</option>
+                    <option value="completed">Completed</option>
+                    <option value="high">High Priority</option>
+                    <option value="medium">Medium Priority</option>
+                    <option value="low">Low Priority</option>
+                    <option value="deadline">By Deadline</option>
+                </select>
+                <button id="templateBtn" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
+                    Templates
+                </button>
             </div>
+
+            <!-- Task List -->
+            <div id="taskList" class="space-y-4"></div>
         </div>
 
-        <!-- Task Controls -->
-        <div class="flex flex-col md:flex-row gap-4 mb-8">
-            <button id="newTaskBtn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                New Task
-            </button>
-            <select id="statusFilter" class="px-4 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 rounded-lg">
-                <option value="all">All Tasks</option>
-                <option value="active">Active</option>
-                <option value="completed">Completed</option>
-            </select>
-            <button id="templateBtn" class="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-white rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors">
-                Templates
-            </button>
-        </div>
+        <!-- Statistics Page -->
+        <div id="statsPage" class="page hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Task Status Distribution -->
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Task Status Distribution</h3>
+                    <canvas id="statusChart"></canvas>
+                </div>
 
-        <!-- Task List -->
-        <div id="taskList" class="space-y-4"></div>
+                <!-- Priority Distribution -->
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Priority Distribution</h3>
+                    <canvas id="priorityChart"></canvas>
+                </div>
+
+                <!-- Task Timeline -->
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Tasks Timeline</h3>
+                    <canvas id="timelineChart"></canvas>
+                </div>
+
+                <!-- Completion Trend -->
+                <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md">
+                    <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">Completion Trend</h3>
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
 
         <!-- New Task Modal -->
         <div id="taskModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center">
@@ -123,7 +175,8 @@
                 </div>
             </div>
         </div>
-    </div>
+    </main>
+
     <script type="module" src="js/app.js"></script>
 </body>
 </html>

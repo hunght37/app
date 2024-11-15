@@ -2,6 +2,7 @@
 export class TaskManager {
     constructor() {
         this.tasks = this.loadTasks();
+        this.statsManager = null; // Will be set by app.js
     }
 
     // Load tasks from localStorage
@@ -19,6 +20,9 @@ export class TaskManager {
     saveTasks() {
         try {
             localStorage.setItem('tasks', JSON.stringify(this.tasks));
+            if (this.statsManager) {
+                this.statsManager.updateCharts();
+            }
             return true;
         } catch (error) {
             console.error('Error saving tasks:', error);
@@ -33,7 +37,14 @@ export class TaskManager {
                 // Update existing task
                 const index = this.tasks.findIndex(t => t.id === taskData.id);
                 if (index !== -1) {
-                    this.tasks[index] = { ...this.tasks[index], ...taskData };
+                    const updatedTask = { ...this.tasks[index], ...taskData };
+                    // Add completedAt date when task is completed
+                    if (taskData.completed && !this.tasks[index].completed) {
+                        updatedTask.completedAt = new Date().toISOString();
+                    } else if (!taskData.completed) {
+                        delete updatedTask.completedAt;
+                    }
+                    this.tasks[index] = updatedTask;
                 }
             } else {
                 // Create new task
@@ -63,88 +74,52 @@ export class TaskManager {
         }
     }
 
-    // Toggle task completion status
-    toggleTaskStatus(taskId) {
+    // Get all tasks
+    getTasks() {
+        return this.tasks;
+    }
+
+    // Toggle task completion
+    toggleTaskCompletion(taskId) {
         try {
             const task = this.tasks.find(t => t.id === taskId);
             if (task) {
                 task.completed = !task.completed;
-                task.updatedAt = new Date().toISOString();
+                if (task.completed) {
+                    task.completedAt = new Date().toISOString();
+                } else {
+                    delete task.completedAt;
+                }
                 return this.saveTasks();
             }
             return false;
         } catch (error) {
-            console.error('Error toggling task status:', error);
+            console.error('Error toggling task completion:', error);
             return false;
-        }
-    }
-
-    // Get filtered tasks based on status
-    getFilteredTasks(filter = 'all') {
-        try {
-            let filteredTasks = [...this.tasks];
-            
-            switch (filter) {
-                case 'active':
-                    filteredTasks = filteredTasks.filter(task => !task.completed);
-                    break;
-                case 'completed':
-                    filteredTasks = filteredTasks.filter(task => task.completed);
-                    break;
-                case 'high':
-                    filteredTasks = filteredTasks.filter(task => task.priority === 'high');
-                    break;
-                case 'medium':
-                    filteredTasks = filteredTasks.filter(task => task.priority === 'medium');
-                    break;
-                case 'low':
-                    filteredTasks = filteredTasks.filter(task => task.priority === 'low');
-                    break;
-                case 'deadline':
-                    filteredTasks.sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
-                    break;
-            }
-
-            return filteredTasks;
-        } catch (error) {
-            console.error('Error filtering tasks:', error);
-            return this.tasks;
         }
     }
 
     // Get task statistics
     getStatistics() {
-        try {
-            const total = this.tasks.length;
-            const completed = this.tasks.filter(task => task.completed).length;
-            const active = total - completed;
-            const highPriority = this.tasks.filter(task => task.priority === 'high').length;
-            const dueSoon = this.tasks.filter(task => {
-                const deadline = new Date(task.deadline);
-                const today = new Date();
-                const diffTime = deadline.getTime() - today.getTime();
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                return diffDays <= 3 && diffDays >= 0;
-            }).length;
+        const total = this.tasks.length;
+        const completed = this.tasks.filter(t => t.completed).length;
+        const active = total - completed;
+        const highPriority = this.tasks.filter(t => t.priority === 'high').length;
+        const dueSoon = this.tasks.filter(t => {
+            if (!t.dueDate || t.completed) return false;
+            const dueDate = new Date(t.dueDate);
+            const today = new Date();
+            const diffDays = Math.ceil((dueDate - today) / (1000 * 60 * 60 * 24));
+            return diffDays <= 3 && diffDays >= 0;
+        }).length;
 
-            return {
-                total,
-                completed,
-                active,
-                highPriority,
-                dueSoon,
-                completionRate: total ? Math.round((completed / total) * 100) : 0
-            };
-        } catch (error) {
-            console.error('Error calculating statistics:', error);
-            return {
-                total: 0,
-                completed: 0,
-                active: 0,
-                highPriority: 0,
-                dueSoon: 0,
-                completionRate: 0
-            };
-        }
+        return {
+            total,
+            active,
+            completed,
+            highPriority,
+            dueSoon,
+            completionRate: total > 0 ? Math.round((completed / total) * 100) : 0
+        };
     }
 }
